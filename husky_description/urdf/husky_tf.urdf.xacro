@@ -2,26 +2,13 @@
 <!--
 Software License Agreement (BSD)
 
-\file      husky.urdf.xacro
-\authors   Paul Bovbel <pbovbel@clearpathrobotics.com>, Devon Ash <dash@clearpathrobotics.com>
+\file				husky.urdf.xacro
+\authors of husky.urdf.xacro	Paul Bovbel <pbovbel@clearpathrobotics.com>, Devon Ash <dash@clearpathrobotics.com>
 \copyright Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that
-the following conditions are met:
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the
-   following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
-   following disclaimer in the documentation and/or other materials provided with the distribution.
- * Neither the name of Clearpath Robotics nor the names of its contributors may be used to endorse or promote
-   products derived from this software without specific prior written permission.
+\file	husky_ns.urdf.xacro
+\author	Minkyu Park <mk.park@unist.ac.kr>
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
-RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
-DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
-OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 <robot name="husky" xmlns:xacro="http://ros.org/wiki/xacro">
 
@@ -33,12 +20,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <xacro:arg name="kinect_xyz" default="$(optenv HUSKY_KINECT_XYZ 0 0 0)" />
   <xacro:arg name="kinect_rpy" default="$(optenv HUSKY_KINECT_RPY 0 0.18 3.14)" />
 
-  <xacro:arg name="robot_namespace" default="/" />
-  <!-- xacro:arg name="urdf_extras" default="empty.urdf" / -->
+  <xacro:arg name="robot_namespace" default="husky" />
+  <xacro:arg name="tf_prefix" default="husky_tf" />
+
+  <xacro:arg name="urdf_extras" default="empty.urdf" />
 
   <!-- Included URDF/XACRO Files -->
-  <xacro:include filename="$(find husky_description)/urdf/decorations.urdf.xacro" />
-  <xacro:include filename="$(find husky_description)/urdf/wheel.urdf.xacro" />
+  <xacro:include filename="$(find husky_description)/urdf/decorations_tf.urdf.xacro" />
+  <xacro:include filename="$(find husky_description)/urdf/wheel_tf.urdf.xacro" />
 
   <xacro:include filename="$(find husky_description)/urdf/accessories/kinect_camera.urdf.xacro"/>
   <xacro:include filename="$(find husky_description)/urdf/accessories/sick_lms1xx_mount.urdf.xacro"/>
@@ -61,7 +50,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <xacro:property name="wheel_radius" value="0.1651" />
 
   <!-- Base link is the center of the robot's bottom plate -->
-  <link name="base_link">
+  <link name="$(arg tf_prefix)/base_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
@@ -83,16 +72,16 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   </link>
 
   <!-- Base footprint is on the ground under the robot -->
-  <link name="base_footprint"/>
+  <link name="$(arg tf_prefix)/base_footprint"/>
 
-  <joint name="base_footprint_joint" type="fixed">
+  <joint name="$(arg tf_prefix)/base_footprint_joint" type="fixed">
     <origin xyz="0 0 ${wheel_vertical_offset - wheel_radius}" rpy="0 0 0" />
-    <parent link="base_link" />
-    <child link="base_footprint" />
+    <parent link="$(arg tf_prefix)/base_link" />
+    <child link="$(arg tf_prefix)/base_footprint" />
   </joint>
 
   <!-- Interial link stores the robot's inertial information -->
-  <link name="inertial_link">
+  <link name="$(arg tf_prefix)/inertial_link">
     <inertial>
       <mass value="46.034" />
       <origin xyz="-0.00065 -0.085 0.062" />
@@ -100,65 +89,68 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     </inertial>
   </link>
 
-  <joint name="inertial_joint" type="fixed">
+  <joint name="$(arg tf_prefix)/inertial_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="base_link" />
-    <child link="inertial_link" />
+    <parent link="$(arg tf_prefix)/base_link" />
+    <child link="$(arg tf_prefix)/inertial_link" />
   </joint>
 
   <!-- IMU Link is the standard mounting position for the UM6 IMU.-->
   <!-- Can be modified with environment variables in /etc/ros/setup.bash -->
-  <link name="imu_link"/>
-  <joint name="imu_joint" type="fixed">
+  <link name="$(arg tf_prefix)/imu_link"/>
+  <joint name="$(arg tf_prefix)/imu_joint" type="fixed">
     <origin xyz="$(optenv HUSKY_IMU_XYZ 0.19 0 0.149)" rpy="$(optenv HUSKY_IMU_RPY 0 -1.5708 3.1416)" />
-    <parent link="base_link" />
-    <child link="imu_link" />
+    <parent link="$(arg tf_prefix)/base_link" />
+    <child link="$(arg tf_prefix)/imu_link" />
   </joint>
-  <gazebo reference="imu_link">
+  <gazebo reference="$(arg tf_prefix)/imu_link">
   </gazebo>
 
   <!-- Husky wheel macros -->
-  <xacro:husky_wheel wheel_prefix="front_left">
+  <xacro:husky_wheel wheel_prefix="front_left" tf_prefix="$(arg tf_prefix)">
     <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:husky_wheel>
-  <xacro:husky_wheel wheel_prefix="front_right">
+
+  <xacro:husky_wheel wheel_prefix="front_right" tf_prefix="$(arg tf_prefix)">
     <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:husky_wheel>
-  <xacro:husky_wheel wheel_prefix="rear_left">
+
+  <xacro:husky_wheel wheel_prefix="rear_left" tf_prefix="$(arg tf_prefix)">
     <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:husky_wheel>
-  <xacro:husky_wheel wheel_prefix="rear_right">
+
+  <xacro:husky_wheel wheel_prefix="rear_right" tf_prefix="$(arg tf_prefix)">
     <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:husky_wheel>
 
-  <xacro:husky_decorate />
+  <xacro:husky_decorate tf_prefix="$(arg tf_prefix)"/>
 
   <xacro:if value="$(arg laser_enabled)">
 
-    <sick_lms1xx_mount prefix="base"/>
+    <sick_lms1xx_mount prefix="$(arg tf_prefix)/base"/>
 
-    <sick_lms1xx frame="base_laser" topic="scan" robot_namespace="$(arg robot_namespace)"/>
+    <sick_lms1xx frame="$(arg tf_prefix)/base_laser" topic="scan"/>
 
-    <joint name="laser_mount_joint" type="fixed">
+    <joint name="$(arg tf_prefix)/laser_mount_joint" type="fixed">
       <origin xyz="$(arg laser_xyz)" rpy="$(arg laser_rpy)" />
-      <parent link="top_plate_link" />
-      <child link="base_laser_mount" />
+      <parent link="$(arg tf_prefix)/top_plate_link" />
+      <child link="$(arg tf_prefix)/base_laser_mount" />
     </joint>
 
   </xacro:if>
 
   <xacro:if value="$(arg kinect_enabled)">
 
-    <xacro:sensor_arch prefix="" parent="top_plate_link">
+    <xacro:sensor_arch prefix="$(arg tf_prefix)" parent="$(arg tf_prefix)/top_plate_link">
       <origin xyz="-0.35 0 0.51" rpy="0 0 -3.14"/>
     </xacro:sensor_arch>
-    <joint name="kinect_frame_joint" type="fixed">
+    <joint name="$(arg tf_prefix)/kinect_frame_joint" type="fixed">
       <origin xyz="$(arg kinect_xyz)" rpy="$(arg kinect_rpy)" />
-      <parent link="sensor_arch_mount_link"/>
-      <child link="camera_link"/>
+      <parent link="$(arg tf_prefix)/sensor_arch_mount_link"/>
+      <child link="$(arg tf_prefix)/camera_link"/>
     </joint>
 
-    <xacro:kinect_camera prefix="camera" robot_namespace="$(arg robot_namespace)"/>
+    <xacro:kinect_camera prefix="$(arg tf_prefix)/camera" robot_namespace="$(arg robot_namespace)"/>
   </xacro:if>
 
   <gazebo>
@@ -171,7 +163,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
       <robotNamespace>$(arg robot_namespace)</robotNamespace>
       <updateRate>50.0</updateRate>
-      <bodyName>base_link</bodyName>
+      <frameId>$(arg tf_prefix)/base_link</frameId>
+      <bodyName>$(arg tf_prefix)/base_link</bodyName>
       <topicName>imu/data</topicName>
       <accelDrift>0.005 0.005 0.005</accelDrift>
       <accelGaussianNoise>0.005 0.005 0.005</accelGaussianNoise>
@@ -186,8 +179,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <plugin name="gps_controller" filename="libhector_gazebo_ros_gps.so">
       <robotNamespace>$(arg robot_namespace)</robotNamespace>
       <updateRate>40</updateRate>
-      <bodyName>base_link</bodyName>
-      <frameId>base_link</frameId>
+      <bodyName>$(arg tf_prefix)/base_link</bodyName>
+      <frameId>$(arg tf_prefix)/base_link</frameId>
       <topicName>navsat/fix</topicName>
       <velocityTopicName>navsat/vel</velocityTopicName>
       <referenceLatitude>49.9</referenceLatitude>
@@ -199,6 +192,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   </gazebo>
 
   <!-- Optional custom includes. -->
-  <!-- xacro:include filename="$(arg urdf_extras)" / -->
+  <xacro:include filename="$(arg urdf_extras)" />
 
 </robot>
