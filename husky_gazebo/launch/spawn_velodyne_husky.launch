@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <arg name="multimaster" default="false"/>
+  <arg name="robot_namespace" default="/"/>
+  <arg name="x" default="0.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="yaw" default="0.0"/>
+  <arg name="laser_enabled" default="$(optenv HUSKY_LMS1XX_ENABLED false)"/>
+  <arg name="3d_sensor_enabled" default="$(optenv HUSKY_VELODYNE_ENABLED false)"/>
+  <arg name="kinect_enabled" default="$(optenv HUSKY_UR5_ENABLED false)"/>
+  <arg name="urdf_extras" default="$(optenv HUSKY_URDF_EXTRAS)"/>
+  <arg name="robot_description"
+     default="$(find husky_description)/urdf/husky.urdf.xacro"/>
+  <param name="/robot_description"
+   command="$(find xacro)/xacro --inorder $(arg robot_description) namesapce_deploy:=$(arg robot_namespace)"/>
+  <arg name="tfpre" default="$(arg robot_namespace)" />
+   <param name="tf_prefix" value="$(arg robot_namespace)" />
+
+
+
+    <!-- For single master bringup, run robot control on the gazebo master -->
+    <!-- Note that husky_description/description.launch is already included in husky_control/control.launch. -->
+
+      <include file="$(find husky_control)/launch/velodyne_control.launch">
+        <arg name="multimaster" value="$(arg multimaster)"/>
+        <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+        <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+        <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+        <arg name="urdf_extras" value="$(arg urdf_extras)"/>
+        <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
+        <arg name="yaw" value="$(arg yaw)"/>
+        
+      </include>
+
+    <!-- Spawn robot in gazebo -->
+    <node name="spawn_husky_model" pkg="gazebo_ros" type="spawn_model"
+        args="-x $(arg x)
+              -y $(arg y)
+              -Y $(arg yaw)
+              -unpause
+              -urdf
+              -param robot_description
+              -model $(arg robot_namespace)" />
+
+
+
+</launch>

@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="mav_name" default="firefly"/>
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="log_file" default="$(arg mav_name)" />
+
+  <arg name="laser_enabled" default="false"/>
+  <arg name="3d_sensor_enabled" default="true"/>
+  <arg name="kinect_enabled" default="false"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" default="worlds/empty.world"/>
+    <!-- <arg name="debug" value="true"/> -->
+    <arg name="paused" value="true"/>
+    <!-- <arg name="gui" value="false"/> -->
+  </include>
+
+
+  <group ns="husky1">
+
+  <include file="$(find husky_gazebo)/launch/spawn_multi_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    <arg name="robot_namespace" value="husky1"/>
+    <arg name="x" value="-5.0"/>
+    <arg name="robot_description"
+       default="$(find husky_description)/urdf/multi_husky.urdf.xacro"/>
+  </include>
+
+
+  </group>
+
+  <group ns="husky2">
+
+  <include file="$(find husky_gazebo)/launch/spawn_multi_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    <arg name="robot_namespace" value="husky2"/>
+    <arg name="x" value="5.0"/>
+    <arg name="robot_description"
+       default="$(find husky_description)/urdf/multi_husky.urdf.xacro"/>
+  </include>
+
+
+  </group>
+
+
+</launch>

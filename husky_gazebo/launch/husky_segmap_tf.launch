@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="mav_name" default="firefly"/>
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="log_file" default="$(arg mav_name)" />
+
+  <arg name="laser_enabled" default="false"/>
+  <arg name="3d_sensor_enabled" default="true"/>
+  <arg name="kinect_enabled" default="false"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" default="$(find flight_space_mapping)/world/Houses.world"/>
+    <!-- <arg name="debug" value="true"/> -->
+    <arg name="paused" value="true"/>
+    <!-- <arg name="gui" value="false"/> -->
+  </include>
+
+
+  <group ns="husky1">
+
+  <include file="$(find husky_gazebo)/launch/spawn_multi_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    <arg name="robot_namespace" value="husky1"/>
+    <arg name="x" value="-5.0"/>
+    <arg name="robot_description"
+       default="$(find husky_description)/urdf/multi_husky.urdf.xacro"/>
+  </include>
+
+  </group>
+
+  <!-- segmapper node -->
+  <arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+  <rosparam command="load" file="$(find husky_gazebo)/launch/kitti/kitti_loop_closure_tf.yaml"/>
+  <arg name="icp_configuration_file" value="$(find husky_gazebo)/launch/kitti/icp_dynamic_outdoor_tf.yaml"/>
+  <arg name="icp_input_filters_file" value="$(find husky_gazebo)/launch/kitti/input_filters_outdoor_tf.yaml"/>
+  <!-- Enable callgrind profiling -->
+  <arg name="enable_callgrind" default="false"/>
+  <arg name="callgrind_ouput_path" value="/tmp/segmatch-callgrind.out"/>
+  <arg name="launch_prefix" value="valgrind --tool=callgrind --callgrind-out-file=$(arg callgrind_ouput_path) --instr-atstart=no" if="$(arg enable_callgrind)"/> 
+  <arg name="launch_prefix" value="" unless="$(arg enable_callgrind)"/>
+
+  <node name="segmapper" pkg="segmapper" type="segmapper_node" output="screen" respawn="false" launch-prefix="$(arg launch_prefix)">
+    <param name="icp_configuration_file" value="$(arg icp_configuration_file)"/>
+    <param name="icp_input_filters_file" value="$(arg icp_input_filters_file)"/>
+    <!-- param name="robot_prefix" value="uav1" / -->
+  </node>
+  <!-- Rviz visualization config file path -->
+  <arg name="rviz_config_file" value="$(env HOME)/.segmap/kitti/kitti_loop_closure.rviz"/>
+  <!-- rviz node -->
+  <node name="visualizer" pkg="rviz" type="rviz" output="screen" respawn="$(arg respawn_value)" args="-d $(arg rviz_config_file)" />
+
+
+</launch>

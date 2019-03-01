@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="laser_enabled" default="false"/>
+  <arg name="3d_sensor_enabled" default="true"/>
+  <arg name="3d_sensor_tilted" default="true"/>
+  <arg name="kinect_enabled" default="false"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" default="$(find flight_space_mapping)/world/city_5.world"/>
+    <!-- <arg name="debug" value="true"/> -->
+    <arg name="paused" value="true"/>
+    <!-- <arg name="gui" value="false"/> -->
+  </include>
+
+  <arg name="ns1" value="husky0" />
+  <group ns="$(arg ns1)">
+
+  <include file="$(find husky_gazebo)/launch/spawn_multi_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+    <arg name="3d_sensor_tilted" value="$(arg 3d_sensor_tilted)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    <arg name="robot_namespace" value="$(arg ns1)"/>
+    <arg name="x" value="-10.0"/>
+    <arg name="y" value="1.0"/>
+    <arg name="yaw" value="0.0"/>
+    <arg name="init_x" value="$(eval 5.* arg('x'))"/>
+    <arg name="init_y" value="$(eval 5.* arg('y'))"/>
+    <arg name="init_yaw" value="$(eval 5.* arg('yaw'))"/>
+
+    <arg name="robot_description"
+       default="$(find husky_description)/urdf/multi_husky_velodyne.urdf.xacro"/>
+  </include>
+  <!-- Ground segmentation -->
+  <node name="ransac_ground_filter" pkg="flight_space_mapping" type="ransac_ground_filter" output="screen"/>
+  </group>
+
+
+  <arg name="ns2" value="husky1" />
+  <group ns="$(arg ns2)">
+
+  <include file="$(find husky_gazebo)/launch/spawn_multi_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="3d_sensor_enabled" value="$(arg 3d_sensor_enabled)"/>
+    <arg name="3d_sensor_tilted" value="$(arg 3d_sensor_tilted)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    <arg name="robot_namespace" value="$(arg ns2)"/>
+    <arg name="x" value="20.0"/>
+    <arg name="y" value="-1.0"/>
+    <arg name="yaw" value="3.14"/>
+    <arg name="init_x" value="$(eval 5.* arg('x'))"/>
+    <arg name="init_y" value="$(eval 5.* arg('y'))"/>
+    <arg name="init_yaw" value="$(eval 5.* arg('yaw'))"/>
+
+    <arg name="robot_description"
+       default="$(find husky_description)/urdf/multi_husky_velodyne.urdf.xacro"/>
+  </include>
+  <!-- Ground segmentation -->
+  <node name="ransac_ground_filter" pkg="flight_space_mapping" type="ransac_ground_filter" output="screen"/>
+
+  </group>
+
+</launch>
