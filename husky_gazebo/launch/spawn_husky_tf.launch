@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="x" default="0.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="yaw" default="0.0"/>
+
+  <arg name="laser_enabled" default="$(optenv HUSKY_LMS1XX_ENABLED true)"/>
+  <arg name="kinect_enabled" default="$(optenv HUSKY_UR5_ENABLED false)"/>
+  <arg name="config_extras"
+     default="$(eval optenv('HUSKY_CONFIG_EXTRAS', find('husky_control') + '/config/empty.yaml'))"/>
+
+  <arg name="urdf_extras" default="$(optenv HUSKY_URDF_EXTRAS)"/>
+  <arg name="robot_ns" default="husky1" />
+  <arg name="tf_pre" default="husky1_tf" />
+
+  <node pkg="tf" type="static_transform_publisher" name="world_odom" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 world $(arg tf_pre)/odom 100" />
+
+  <!-- For single master bringup, run robot control on the gazebo master -->
+  <!-- Note that husky_description/description.launch is already included in husky_control/control.launch. -->
+  <include file="$(find husky_description)/launch/description_tf.launch" >
+    <arg name="robot_ns" value="$(arg robot_ns)"/>
+    <arg name="tf_pre" value="$(arg tf_pre)"/>
+    <arg name="laser_enabled" default="$(arg laser_enabled)"/>
+    <arg name="kinect_enabled" default="$(arg kinect_enabled)"/>
+    <arg name="urdf_extras" default="$(arg urdf_extras)"/>
+  </include>
+  <!-- Override the default control parameters, see config/empty.yaml for default. -->
+  <rosparam command="load" file="$(arg config_extras)" />
+
+  <!-- Spawn robot in gazebo -->
+  <node name="spawn_husky_model" pkg="gazebo_ros" type="spawn_model"
+        args="-x $(arg x)
+              -y $(arg y)
+              -Y $(arg yaw)
+              -unpause
+              -urdf
+              -param robot_description
+              -model $(arg robot_ns)" />
+
+  <!-- Load controller configuration -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+
+  <rosparam subst_value="True">
+    husky_joint_publisher:
+      type: "joint_state_controller/JointStateController"
+      publish_rate: 50
+
+    husky_velocity_controller:
+      type: "diff_drive_controller/DiffDriveController"
+      left_wheel: ['$(arg tf_pre)/front_left_wheel', '$(arg tf_pre)/rear_left_wheel']
+      right_wheel: ['$(arg tf_pre)/front_right_wheel', '$(arg tf_pre)/rear_right_wheel']
+      publish_rate: 50
+      pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+      twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+      cmd_vel_timeout: 0.25
+      velocity_rolling_window_size: 2
+
+      # Base frame_id
+      base_frame_id: $(arg tf_pre)/base_link
+
+      # Odometry fused with IMU is published by robot_localization, so
+      # no need to publish a TF based on encoders alone.
+      enable_odom_tf: false
+
+      # Husky hardware provides wheel velocities
+      estimate_velocity_from_position: false
+
+      # Wheel separation and radius multipliers
+      wheel_separation_multiplier: 1.875 # default: 1.0
+      wheel_radius_multiplier    : 1.0 # default: 1.0
+
+      # Velocity and acceleration limits
+      # Whenever a min_* is unspecified, default to -max_*
+      linear:
+        x:
+          has_velocity_limits    : true
+          max_velocity           : 1.0   # m/s
+          has_acceleration_limits: true
+          max_acceleration       : 3.0   # m/s^2
+      angular:
+        z:
+          has_velocity_limits    : true
+          max_velocity           : 2.0   # rad/s
+          has_acceleration_limits: true
+          max_acceleration       : 6.0   # rad/s^2
+  </rosparam>
+
+  <!-- Spawn controllers -->
+  <node name="base_controller_spawner" pkg="controller_manager" type="spawner" 
+        args="husky_joint_publisher
+              husky_velocity_controller
+              --timeout 50"/>
+
+  <!-- Start EKF for localization -->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
+    <rosparam subst_value="True">
+      map_frame: world
+      odom_frame: $(arg tf_pre)/odom
+      base_link_frame: $(arg tf_pre)/base_link
+      world_frame: $(arg tf_pre)/odom
+
+      two_d_mode: true
+      frequency: 50
+
+      odom0: husky_velocity_controller/odom
+      odom0_config: [false, false, false,
+                     false, false, false,
+                     true, true, true,
+                     false, false, true,
+                     false, false, false]
+      odom0_differential: false
+      odom0_queue_size: 10
+
+      imu0: imu/data
+      imu0_config: [false, false, false,
+                    true, true, true,
+                    false, false, false,
+                    true, true, true,
+                    false, false, false]
+      imu0_differential: true
+      imu0_queue_size: 10
+      imu0_remove_gravitational_acceleration: true
+    </rosparam>
+  </node>
+
+  <node pkg="interactive_marker_twist_server" type="marker_server" name="twist_marker_server" output="screen"/>
+
+
+
+  <node pkg="twist_mux" type="twist_mux" name="twist_mux">
+    <rosparam command="load" file="$(find husky_control)/config/twist_mux.yaml" />
+    <remap from="cmd_vel_out" to="husky_velocity_controller/cmd_vel"/>
+  </node>
+
+</launch>
