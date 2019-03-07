@@ -46,7 +46,7 @@
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
     <rosparam command="load" file="$(find husky_control)/config/localization.yaml" />
     <rosparam param="odom_frame" subst_value="True"> odom</rosparam>
-    <rosparam param="base_link_frame" subst_value="True"> base_link</rosparam>
+    <rosparam param="base_link_frame" subst_value="True"> $(arg robot_namespace)/base_link</rosparam>
     <rosparam param="world_frame" subst_value="True"> odom</rosparam>
     <rosparam param="odom0_frame" subst_value="True"> $(arg robot_namespace)/odom</rosparam>
     <rosparam param="initial_state" subst_value="True">

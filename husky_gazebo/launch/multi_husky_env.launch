@@ -9,7 +9,7 @@
   <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
   <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" default="$(find flight_space_mapping)/world/city_5.world"/>
+    <arg name="world_name" default="$(find flight_space_mapping)/worlds/city_5.world"/>
     <!-- <arg name="debug" value="true"/> -->
     <arg name="paused" value="true"/>
     <!-- <arg name="gui" value="false"/> -->
@@ -27,9 +27,14 @@
     <arg name="x" value="-10.0"/>
     <arg name="y" value="1.0"/>
     <arg name="yaw" value="0.0"/>
+<!--
     <arg name="init_x" value="$(eval 5.* arg('x'))"/>
     <arg name="init_y" value="$(eval 5.* arg('y'))"/>
     <arg name="init_yaw" value="$(eval 5.* arg('yaw'))"/>
+-->
+    <arg name="init_x" value="-50"/>
+    <arg name="init_y" value="5"/>
+    <arg name="init_yaw" value="0"/>
 
     <arg name="robot_description"
        default="$(find husky_description)/urdf/multi_husky_velodyne.urdf.xacro"/>
@@ -51,9 +56,9 @@
     <arg name="x" value="20.0"/>
     <arg name="y" value="-1.0"/>
     <arg name="yaw" value="3.14"/>
-    <arg name="init_x" value="$(eval 5.* arg('x'))"/>
-    <arg name="init_y" value="$(eval 5.* arg('y'))"/>
-    <arg name="init_yaw" value="$(eval 5.* arg('yaw'))"/>
+    <arg name="init_x" value="100"/>
+    <arg name="init_y" value="-5"/>
+    <arg name="init_yaw" value="0"/>
 
     <arg name="robot_description"
        default="$(find husky_description)/urdf/multi_husky_velodyne.urdf.xacro"/>

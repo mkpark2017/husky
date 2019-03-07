@@ -6,7 +6,7 @@ SegMapper: {
   clear_local_map_after_loop_closure: false,
   
   publish_world_to_odom: true,
-  tf_publication_rate_hz: 10,
+  tf_publication_rate_hz: 100,
   
   LaserSlamWorker: {
     use_odometry_information: true,
